@@ -46,7 +46,14 @@ fun AppNavGraph(
         
         // Product Management Screen - After successful login
         composable(route = AppDestinations.HOME) {
-            ProductManagementScreen()
+            ProductManagementScreen(
+                onLogout = {
+                    // Navigate back to login and clear back stack
+                    navController.navigate(AppDestinations.LOGIN) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }

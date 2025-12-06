@@ -7,6 +7,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.projetmobile.auth.AuthViewModel
 import com.example.projetmobile.data.Product
 
 /**
@@ -24,7 +26,9 @@ import com.example.projetmobile.data.Product
 @Composable
 fun ProductManagementScreen(
     modifier: Modifier = Modifier,
-    viewModel: ProductViewModel = viewModel()
+    viewModel: ProductViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel(),
+    onLogout: () -> Unit = {}
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var editingProduct by remember { mutableStateOf<Product?>(null) }
@@ -33,17 +37,37 @@ fun ProductManagementScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val syncStatus by viewModel.syncStatus.collectAsState()
     
+    // Calculate totals
+    val totalProducts = products.size
+    val totalValue = products.sumOf { it.price * it.quantity }
+    
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { 
                     Column {
                         Text("Product Management")
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier = Modifier.padding(top = 4.dp)
+                        ) {
+                            Text(
+                                text = "Total: $totalProducts products",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                            )
+                            Text(
+                                text = "Value: ${"%.2f".format(totalValue)} €",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                         syncStatus?.let { status ->
                             Text(
                                 text = status,
                                 style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.6f)
                             )
                         }
                     }
@@ -59,6 +83,30 @@ fun ProductManagementScreen(
                 onClick = { showAddDialog = true }
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Product")
+            }
+        },
+        bottomBar = {
+            BottomAppBar(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                TextButton(
+                    onClick = {
+                        authViewModel.logout()
+                        onLogout()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(
+                        Icons.Default.ExitToApp,
+                        contentDescription = "Logout",
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Logout")
+                }
             }
         }
     ) { paddingValues ->
