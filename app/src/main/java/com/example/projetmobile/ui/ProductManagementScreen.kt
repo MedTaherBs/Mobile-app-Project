@@ -287,6 +287,64 @@ fun ProductDialog(
     var quantity by remember { mutableStateOf(product?.quantity?.toString() ?: "") }
     var price by remember { mutableStateOf(product?.price?.toString() ?: "") }
     
+    var nameError by remember { mutableStateOf<String?>(null) }
+    var quantityError by remember { mutableStateOf<String?>(null) }
+    var priceError by remember { mutableStateOf<String?>(null) }
+    
+    fun validate(): Boolean {
+        var isValid = true
+        
+        // Validate name
+        if (name.isBlank()) {
+            nameError = "Name cannot be empty"
+            isValid = false
+        } else {
+            nameError = null
+        }
+        
+        // Validate quantity
+        val quantityInt = quantity.toIntOrNull()
+        when {
+            quantity.isBlank() -> {
+                quantityError = "Quantity cannot be empty"
+                isValid = false
+            }
+            quantityInt == null -> {
+                quantityError = "Invalid number"
+                isValid = false
+            }
+            quantityInt < 0 -> {
+                quantityError = "Quantity must be ≥ 0"
+                isValid = false
+            }
+            else -> {
+                quantityError = null
+            }
+        }
+        
+        // Validate price
+        val priceDouble = price.toDoubleOrNull()
+        when {
+            price.isBlank() -> {
+                priceError = "Price cannot be empty"
+                isValid = false
+            }
+            priceDouble == null -> {
+                priceError = "Invalid number"
+                isValid = false
+            }
+            priceDouble <= 0 -> {
+                priceError = "Price must be > 0"
+                isValid = false
+            }
+            else -> {
+                priceError = null
+            }
+        }
+        
+        return isValid
+    }
+    
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { 
@@ -298,37 +356,54 @@ fun ProductDialog(
             ) {
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it },
+                    onValueChange = { 
+                        name = it
+                        nameError = null
+                    },
                     label = { Text("Product Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    isError = nameError != null,
+                    supportingText = nameError?.let { { Text(it) } }
                 )
                 
                 OutlinedTextField(
                     value = quantity,
-                    onValueChange = { quantity = it },
-                    label = { Text("Quantity") },
+                    onValueChange = { 
+                        quantity = it
+                        quantityError = null
+                    },
+                    label = { Text("Quantity (≥ 0)") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
+                    singleLine = true,
+                    isError = quantityError != null,
+                    supportingText = quantityError?.let { { Text(it) } }
                 )
                 
                 OutlinedTextField(
                     value = price,
-                    onValueChange = { price = it },
-                    label = { Text("Price") },
+                    onValueChange = { 
+                        price = it
+                        priceError = null
+                    },
+                    label = { Text("Price (> 0)") },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    singleLine = true
+                    singleLine = true,
+                    isError = priceError != null,
+                    supportingText = priceError?.let { { Text(it) } }
                 )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    val quantityInt = quantity.toIntOrNull() ?: 0
-                    val priceDouble = price.toDoubleOrNull() ?: 0.0
-                    onSave(name, quantityInt, priceDouble)
+                    if (validate()) {
+                        val quantityInt = quantity.toIntOrNull() ?: 0
+                        val priceDouble = price.toDoubleOrNull() ?: 0.0
+                        onSave(name, quantityInt, priceDouble)
+                    }
                 }
             ) {
                 Text("Save")
