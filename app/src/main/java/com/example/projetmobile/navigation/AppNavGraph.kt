@@ -6,7 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.projetmobile.ui.HomeScreen
+import com.example.projetmobile.ui.ProductManagementScreen
 import com.example.projetmobile.ui.LoginScreen
 
 /**
@@ -44,16 +44,9 @@ fun AppNavGraph(
             )
         }
         
-        // Home Screen - After successful login
+        // Product Management Screen - After successful login
         composable(route = AppDestinations.HOME) {
-            HomeScreen(
-                onLogout = {
-                    // Navigate back to login and clear back stack
-                    navController.navigate(AppDestinations.LOGIN) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
+            ProductManagementScreen()
         }
     }
 }
