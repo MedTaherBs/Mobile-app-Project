@@ -1,23 +1,41 @@
 package com.example.projetmobile.ui
 
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.projetmobile.auth.AuthViewModel
 import com.example.projetmobile.data.Product
+import java.io.File
+import java.io.FileOutputStream
 
 /**
  * Product Management Screen
@@ -28,7 +46,9 @@ fun ProductManagementScreen(
     modifier: Modifier = Modifier,
     viewModel: ProductViewModel = viewModel(),
     authViewModel: AuthViewModel = viewModel(),
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onNavigateToShop: () -> Unit = {},
+    onNavigateToOrderHistory: () -> Unit = {}
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var editingProduct by remember { mutableStateOf<Product?>(null) }
@@ -90,22 +110,47 @@ fun ProductManagementScreen(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                TextButton(
-                    onClick = {
-                        authViewModel.logout()
-                        onLogout()
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Icon(
-                        Icons.Default.ExitToApp,
-                        contentDescription = "Logout",
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Logout")
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = onNavigateToShop) {
+                            Icon(
+                                Icons.Default.Store,
+                                contentDescription = "Shop",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Shop")
+                        }
+                        TextButton(onClick = onNavigateToOrderHistory) {
+                            Icon(
+                                Icons.Default.Receipt,
+                                contentDescription = "Orders",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Orders")
+                        }
+                    }
+                    TextButton(
+                        onClick = {
+                            authViewModel.logout()
+                            onLogout()
+                        },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.ExitToApp,
+                            contentDescription = "Logout",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Logout")
+                    }
                 }
             }
         }
@@ -205,8 +250,8 @@ fun ProductManagementScreen(
         ProductDialog(
             product = null,
             onDismiss = { showAddDialog = false },
-            onSave = { name, quantity, price ->
-                viewModel.addProduct(name, quantity, price)
+            onSave = { name, quantity, price, imagePath ->
+                viewModel.addProduct(name, quantity, price, imagePath)
                 showAddDialog = false
             }
         )
@@ -216,8 +261,8 @@ fun ProductManagementScreen(
         ProductDialog(
             product = product,
             onDismiss = { editingProduct = null },
-            onSave = { name, quantity, price ->
-                viewModel.updateProduct(product.id, name, quantity, price)
+            onSave = { name, quantity, price, imagePath ->
+                viewModel.updateProduct(product.id, name, quantity, price, imagePath)
                 editingProduct = null
             }
         )
@@ -241,6 +286,27 @@ fun ProductCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Product image
+            product.imagePath?.let { path ->
+                val file = File(path)
+                if (file.exists()) {
+                    val bitmap = remember(path) {
+                        BitmapFactory.decodeFile(path)
+                    }
+                    bitmap?.let {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = "Product image",
+                            modifier = Modifier
+                                .size(80.dp)
+                                .clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                    }
+                }
+            }
+            
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = product.name,
@@ -281,15 +347,40 @@ fun ProductCard(
 fun ProductDialog(
     product: Product?,
     onDismiss: () -> Unit,
-    onSave: (String, Int, Double) -> Unit
+    onSave: (String, Int, Double, String?) -> Unit
 ) {
+    val context = LocalContext.current
     var name by remember { mutableStateOf(product?.name ?: "") }
     var quantity by remember { mutableStateOf(product?.quantity?.toString() ?: "") }
     var price by remember { mutableStateOf(product?.price?.toString() ?: "") }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var savedImagePath by remember { mutableStateOf<String?>(product?.imagePath) }
     
     var nameError by remember { mutableStateOf<String?>(null) }
     var quantityError by remember { mutableStateOf<String?>(null) }
     var priceError by remember { mutableStateOf<String?>(null) }
+    
+    // Image picker launcher
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        uri?.let {
+            selectedImageUri = it
+            // Copy image to app's internal storage
+            try {
+                val inputStream = context.contentResolver.openInputStream(it)
+                val fileName = "product_${System.currentTimeMillis()}.jpg"
+                val file = File(context.filesDir, fileName)
+                val outputStream = FileOutputStream(file)
+                inputStream?.copyTo(outputStream)
+                inputStream?.close()
+                outputStream.close()
+                savedImagePath = file.absolutePath
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
     
     fun validate(): Boolean {
         var isValid = true
@@ -354,6 +445,57 @@ fun ProductDialog(
             Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Image picker button
+                OutlinedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .clickable {
+                            photoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (savedImagePath != null) {
+                            val bitmap = remember(savedImagePath) {
+                                BitmapFactory.decodeFile(savedImagePath)
+                            }
+                            bitmap?.let {
+                                Image(
+                                    bitmap = it.asImageBitmap(),
+                                    contentDescription = "Selected image",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    Icons.Default.AddPhotoAlternate,
+                                    contentDescription = "Add photo",
+                                    modifier = Modifier.size(48.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    "Tap to add image",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+                
                 OutlinedTextField(
                     value = name,
                     onValueChange = { 
@@ -402,7 +544,7 @@ fun ProductDialog(
                     if (validate()) {
                         val quantityInt = quantity.toIntOrNull() ?: 0
                         val priceDouble = price.toDoubleOrNull() ?: 0.0
-                        onSave(name, quantityInt, priceDouble)
+                        onSave(name, quantityInt, priceDouble, savedImagePath)
                     }
                 }
             ) {

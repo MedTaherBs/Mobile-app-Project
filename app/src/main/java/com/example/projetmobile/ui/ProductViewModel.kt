@@ -77,12 +77,13 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     /**
      * Add a new product
      */
-    fun addProduct(name: String, quantity: Int, price: Double) {
+    fun addProduct(name: String, quantity: Int, price: Double, imagePath: String? = null) {
         val product = Product(
             id = UUID.randomUUID().toString(),
             name = name,
             quantity = quantity,
-            price = price
+            price = price,
+            imagePath = imagePath
         )
         
         val validationError = product.getValidationError()
@@ -111,12 +112,13 @@ class ProductViewModel(application: Application) : AndroidViewModel(application)
     /**
      * Update an existing product
      */
-    fun updateProduct(id: String, name: String, quantity: Int, price: Double) {
+    fun updateProduct(id: String, name: String, quantity: Int, price: Double, imagePath: String? = null) {
         val updatedProduct = Product(
             id = id,
             name = name,
             quantity = quantity,
-            price = price
+            price = price,
+            imagePath = imagePath
         )
         
         val validationError = updatedProduct.getValidationError()

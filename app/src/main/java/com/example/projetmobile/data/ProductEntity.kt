@@ -12,7 +12,8 @@ data class ProductEntity(
     val id: String,
     val name: String,
     val quantity: Int,
-    val price: Double
+    val price: Double,
+    val imagePath: String? = null
 ) {
     /**
      * Convert to domain model
@@ -22,7 +23,8 @@ data class ProductEntity(
             id = id,
             name = name,
             quantity = quantity,
-            price = price
+            price = price,
+            imagePath = imagePath
         )
     }
     
@@ -35,7 +37,8 @@ data class ProductEntity(
                 id = product.id,
                 name = product.name,
                 quantity = product.quantity,
-                price = product.price
+                price = product.price,
+                imagePath = product.imagePath
             )
         }
     }
