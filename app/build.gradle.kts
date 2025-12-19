@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.projetmobile"
+    namespace = "com.example.smartshop"
     compileSdk = 36
 
     defaultConfig {

@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "603083485012",
-    "project_id": "smartshop-b16a0",
-    "storage_bucket": "smartshop-b16a0.firebasestorage.app"
+    "project_number": "894662361830",
+    "project_id": "smartshop-e8948",
+    "storage_bucket": "smartshop-e8948.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:603083485012:android:83d1b105e6e41edf46a2c1",
+        "mobilesdk_app_id": "1:894662361830:android:62bd11050e3c9aa4ce7127",
         "android_client_info": {
           "package_name": "com.example.projetmobile"
         }
@@ -15,7 +15,26 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAsP7v7V5L9RxiHZeYmGucpF3QgmA-bcpM"
+          "current_key": "AIzaSyBRlzRHEn7JpHisB08J92-Bu4BeOROTgTo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:894662361830:android:3d9ffe1103ceb5b8ce7127",
+        "android_client_info": {
+          "package_name": "com.example.smartshop"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRlzRHEn7JpHisB08J92-Bu4BeOROTgTo"
         }
       ],
       "services": {
